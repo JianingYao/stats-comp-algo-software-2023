@@ -1,9 +1,11 @@
 
 
 ---
-title: 'Homework: Setup and Warm-up'
+title: "Homework: Setup and Warm-up"
 output:
-  html_notebook: 
+  html_document:
+    df_print: paged
+  html_notebook:
     code_folding: none
     highlight: textmate
 ---
