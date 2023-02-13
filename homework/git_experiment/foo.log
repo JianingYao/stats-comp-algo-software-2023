@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2018.4.26)  13 FEB 2023 12:01
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017) (preloaded format=pdflatex 2018.4.26)  13 FEB 2023 15:24
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -23,7 +23,7 @@ File: size10.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
 \belowcaptionskip=\skip42
 \bibindent=\dimen102
 )
-No file foo.aux.
+(./foo.aux)
 \openout1 = `foo.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 6.
@@ -45,6 +45,7 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 8.
 
+
 LaTeX Warning: No \author given.
 
 [1
@@ -52,9 +53,9 @@ LaTeX Warning: No \author given.
 {/jhpce/shared/jhpce/core/tex/2017/texmf-var/fonts/map/pdftex/updmap/pdftex.map
 }] (./foo.aux) ) 
 Here is how much of TeX's memory you used:
- 221 strings out of 492982
- 2386 string characters out of 6127877
- 54251 words of memory out of 5000000
+ 223 strings out of 492982
+ 2402 string characters out of 6127877
+ 60251 words of memory out of 5000000
  3866 multiletter control sequences out of 15000+600000
  6675 words of font info for 24 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -63,7 +64,7 @@ Here is how much of TeX's memory you used:
 c/amsfonts/cm/cmr10.pfb></jhpce/shared/jhpce/core/tex/2017/texmf-dist/fonts/typ
 e1/public/amsfonts/cm/cmr12.pfb></jhpce/shared/jhpce/core/tex/2017/texmf-dist/f
 onts/type1/public/amsfonts/cm/cmr17.pfb>
-Output written on foo.pdf (1 page, 27199 bytes).
+Output written on foo.pdf (1 page, 33849 bytes).
 PDF statistics:
  20 PDF objects out of 1000 (max. 8388607)
  13 compressed objects within 1 object stream
