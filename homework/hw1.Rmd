@@ -140,3 +140,6 @@ Set up your own version of the `hiperglm` package as we discussed in the class a
 ## Things to commit and submit
 
 Hyperlink to the `hiperglm` repository on your Github account
+https://github.com/JianingYao/hiperglm.git 
+
+
