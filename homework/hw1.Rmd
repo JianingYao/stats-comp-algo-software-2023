@@ -118,7 +118,8 @@ Now write a bash script which repeats the following cycle of steps for 99 times:
 
 **Question:** Does the size of the folder look reasonable relative to the sizes of the individual files inside it? (Use `ls -l -h` to list the files with the size info; `-l` is for "long.") If not, why would that be? How would this explain why [Github discourages you from commiting (large) binary files](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github)?
 
-**Your answer:** (To be filled.)
+**Your answer:** The size of the git_experiment is 25M, whereas the total size of all individuals files inside it is 75K. This is because every time I ran and committed to the github iteratively, log files would be saved in the hidden folder .git/. Github discourages users from committing large binary files as these files will take up large space in the repository, decreasing the efficiency of cloning and pulling. Large binary files also cost unnecessary effort to maintain the GitHub platform. 
+
 
 ## Things to commit and submit
 
