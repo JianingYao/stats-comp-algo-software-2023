@@ -1,7 +1,9 @@
 ---
-title: "Homework: Finite Precision Arithmetic & Gradient Descent"
+title: 'Homework: Finite Precision Arithmetic & Gradient Descent'
 output:
-  html_notebook: 
+  html_document:
+    df_print: paged
+  html_notebook:
     code_folding: none
     highlight: textmate
 ---
@@ -49,10 +51,44 @@ sample_mean <- running_sum / n_sample
 sample_sec_mom <- running_sum_sq / n_sample
 
 sample_var_with_question_mark <- (sample_sec_mom - (sample_mean)^2)
+
+print(paste0("Sample mean is: ", sample_mean))
+print(paste0("Sample second moment is: ", sample_sec_mom))
+print(paste0("Sample variance is: ", sample_var_with_question_mark))
 ```
 
+
+```{r}
+# change seed
+set.seed(11234)
+
+running_sum <- 0
+running_sum_sq <- 0
+
+n_sample <- 10^3
+for (i in 1:n_sample) {
+  theta <- 1e10 + rnorm(1)
+  running_sum <- running_sum + theta
+  running_sum_sq <- running_sum_sq + theta^2
+}
+sample_mean <- running_sum / n_sample
+sample_sec_mom <- running_sum_sq / n_sample
+
+sample_var_with_question_mark <- (sample_sec_mom - (sample_mean)^2)
+
+print(paste0("Sample mean is: ", sample_mean))
+print(paste0("Sample second moment is: ", sample_sec_mom))
+print(paste0("Sample variance is: ", sample_var_with_question_mark))
+```
+
+```{r}
+print(.Machine$double.digits)
+```
+
+
 ## Things to commit/submit
-Answers to the questions above.
+
+**MY ANSWER**: When the seed is 140778, the sample mean is 9999999999.97963. However, the sample variance is -147456, which does not make sense since variance should be positive. When the seed is 11234, the sample mean is 10000000000.0682 and the sample variance is 32768. However, the sample variance should be 1 theoretically or near to 1 empirically when using Monte Carlo simulation. The above errors occur because when we calculate sum of squares by adding $\theta^2$ to the sum or calculate squared sample mean, the results (at least $10^{20}$ or $2^{66}$) exceed the maximum number of decimal digits (53) that can be represented precisely in a double precision floating-point number. So any decimal number with more than 16 digits will be rounded or truncated when calculated in R. Such errors can accumulate and result in significantly inaccurate estimate of the true sample variance during each iteration of the Monte Carlo simulation. 
 
 
 # Exercise 2: Numerical differentiation
@@ -68,15 +104,15 @@ What do you expect the slope of the plotted line to be?
 ```{r, eval=FALSE}
 #' Approximate derivative via centered-difference approximation
 approximate_deriv <- function(func, x, dx) {
-  # Fill in
+  (func(x+dx)-func(x-dx))/(2*dx)
 }
 
 log_logistic_func <- function(x) {
-  # Fill in
+  log(exp(x)/(1+exp(x)))
 }
 
 log_logistic_deriv <- function(x) {
-  # Fill in
+  1/(exp(x)+1)
 }
 
 # Calculate and plot the relative errors of finite difference approximations
@@ -94,18 +130,18 @@ rel_err <- abs(
 
 fontsize <- 1.2
 plot(
-  log2_dx, log2(rel_err),
-  frame = FALSE, # Remove the ugly box
-  col = jhu_color$spiritBlue,
-  xlab = "log2 stepsize for finite difference",
-  ylab = "log2 rel errors",
-  xlim = rev(range(log2_dx)),
-  cex.lab = fontsize,
-  cex.axis = fontsize,
-  type = 'l'
+    log2_dx, log2(rel_err),
+    frame = FALSE, # Remove the ugly box
+    col = 'blue',
+    xlab = "log2 stepsize for finite difference",
+    ylab = "log2 rel errors",
+    xlim = rev(range(log2_dx)),
+    cex.lab = fontsize,
+    cex.axis = fontsize,
+    type = 'l'
 )
-
 ```
+
 
 **Questions:**
 Does the relative error plot agree with what the mathematical theory predicts? Explain the observed phenomenon.
@@ -113,6 +149,12 @@ Does the relative error plot agree with what the mathematical theory predicts? E
 Also, what is the slope in the "latter part" of your plotted line, roughly speaking? 
 Explain why we observe such a slope in the relative error. 
 (Hint: Consider a machine with 10 decimal digits of accuracy. What happens if we numerically differentiate $f(x) = x$ at $x = 1$ with $\Delta x = 0.1, 0.01, 0.001, \ldots$.)
+
+
+**MY ANSWER**: the expected slope of the plotted line should be -2 because the difference between analytically derivative and numerical derivative ($O((\Delta x)^2)$) should decrease when $\Delta x$ decreases. Following the equation by taking log on both side, we can get $\log_2 |f'(x) - \frac{f(x+\Delta x) - f(x-\Delta x)}{2\Delta x}| \leq -2\log_2 \Delta x + const$. So the expected slope is -2 on a log-log scale. 
+
+The relative error plot shows negative slope (roughly to be -2) when the step size is larger than $2^{-16}$, but the slope becomes positive afterwards, meaning the relative error increases as the step size is smaller. The slope in the latter part of the plot is roughly 1. The relative error plot does not agree with the mathematical theory because of the limited numerical precision of the computer and rounding error. Considering a machine with 10 decimal digits of accuracy, the machine will only calculate precisely when the step size is larger than $2^{-16}$ ($\approx10^{-5}$) and the error will accumulate when we divided by this rounded $\Delta x$, resulting in increase of relative error. If we continue to decrease the step size below $2^{-52}$, the relative error will remain at 1. (The graph is generated in the folder named as relative_error.jpg)
+
 
 ## Part B: Extention to multivariate functions
 
@@ -131,9 +173,20 @@ Then compare a numerically approximated gradient to one computed via an analytic
 ```{r, eval=FALSE}
 approx_grad <- function(func, x, dx = .Machine$double.eps^(1/3)) {
   numerical_grad <- rep(0, length(x))
-  # Fill in
+  for (i in 1:length(x)){
+    delta <- rep(0, length(x))
+    delta[i] <- dx
+    numerical_grad[i] <- (func(x+delta)-func(x-delta))/(2*dx)
+  }
   return(numerical_grad)
 }
+
+# are_all_close <- function(v, w, abs_tol = 1e-6, rel_tol = 1e-6) {
+#   abs_diff <- abs(v - w)
+#   are_all_within_atol <- all(abs_diff < abs_tol)
+#   are_all_within_rtol <- all(abs_diff < rel_tol * pmax(abs(v), abs(w)))
+#   return(are_all_within_atol && are_all_within_rtol)
+# }
 
 set.seed(410)
 n_param <- 4
@@ -147,7 +200,7 @@ gaussian_logp <- function(x, Sigma_inv) {
 }
 
 gaussian_grad <- function(x, Sigma_inv) {
-  grad <- rep(0, length(x)) # Replace with an actual formula
+  grad <- -Sigma_inv %*% x
   return(grad)
 }
 
@@ -161,10 +214,14 @@ testthat::expect_true(are_all_close(
 ```
 
 
+To derive the analytical expression for the gradient of $f(\boldsymbol{x}) = - \boldsymbol{x}^\intercal \boldsymbol{\Phi} \boldsymbol{x} / 2$, we can apply the chain rule and get $\Delta f(\boldsymbol{x}) = -\boldsymbol{\Phi} \boldsymbol{x}$. 
+
+
 ## Things to commit/submit
 For Part A, completed code and answers to the questions.
 For Part B, completed code that passes the test.
 
+**Answers are embedded in the questions.** 
 
 # Exercise 3: Continuing development of `hiperglm` &mdash; finding MLE via `stats::optim()` and testing it
 
@@ -204,3 +261,4 @@ Please, pretty please, do not calculate an inverse of a matrix.
 ## Things to commit/submit
 
 Link to the pull request.
+
