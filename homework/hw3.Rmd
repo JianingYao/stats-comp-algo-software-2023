@@ -1,9 +1,12 @@
 ---
-title: "Homework: Newton's method for generalized linear models"
+title: 'Homework: Newton''s method for generalized linear models'
 output:
-  html_notebook: 
+  html_document:
+    df_print: paged
+  html_notebook:
     code_folding: none
     highlight: textmate
+  pdf_document: default
 ---
 
 # Exercise: Continuing development of `hiperglm` &mdash; supporting the logistic model
@@ -97,4 +100,5 @@ Why?
 ## Things to commit/submit
 
 * Link to the pull request.
+https://github.com/JianingYao/hiperglm/pull/2 
 * (Optional) Answer to the bonus question.
