@@ -43,6 +43,9 @@ What are relative speeds among the algorithms?
 Do relative speeds agree with what you expect from the complexity analyses?
 If not (quite), why might that be?
 
+**My answer: **
+Theoretically, the overall costs of solving a single linear system involving symmetric positive definite matrix via LU decomposition, Cholesky decomposition, and QR decomposition are $O(\frac{2}{3}p^3)$, $O(\frac{1}{3}p^3)$, and $O(\frac{4}{3}p^3)$. However, the relative speeds do not agree with the theoretical costs, where LU decomposition using solve() takes 174ms (median), Cholesky using chol() and backsolve() takes 227ms (median), and QR using qr.solve() takes 669ms (median). solve() is the fastest because in this case we provided a symmetric positive definite matrix in the system and solve() uses an optimized algorithm to directly use Cholesky decomposition and backward and forward substitution for such matrices, which is faster than using the built-in functions chol() and backsolve() and allocating space to store the upper triangular matrix. 
+
 **Note:**
 I misspoke about the R's built-in `chol()` function during the lecture:
 when applied to a positive-definite `A`, the function actually returns an _upper-triangular_ matrix `R` such that `t(R) %*% R == A`.
@@ -56,7 +59,8 @@ A <- rand_positive_def_matrix(mat_size, cond_num = 1e3)
 b <- rnorm(mat_size)
 
 solve_via_cholesky <- function(A, b) {
-  # Fill in
+    upper <- chol(A)
+    backsolve(upper, backsolve(upper, b, transpose = TRUE))
 }
 
 bench::mark(
@@ -66,7 +70,7 @@ bench::mark(
   solve_via_cholesky(A, b)
 )
 bench::mark(
-  # Solve via QR decomposition
+  qr.solve(A, b)
 )
 ```
 
@@ -88,6 +92,9 @@ What is the relative difference in $\ell^2$-norm?
 How about the coordinate-wise relative differences?
 Are the observed magnitudes of the differences what you'd expect?
 
+**My answer:**
+The relative difference in l2-norm is 1.19e-15 ($\approx 2^{-50}$). The maximum of coordinate-wise relative differences is 4.65e-13 ($\approx 2^{-41}$). The observed magnitudes of differences match with what I expect because multiplication using `long double` provides additional 12 bits of precision after 53rd binary digits. So it is reasonable that the relative difference in l2-norm and coordinate-wise relative differences are around the scale of $2^{-52}$. 
+
 ```{r, eval=FALSE}
 Rcpp::sourceCpp(file.path("src", "matvec_double.cpp"))
 Rcpp::sourceCpp(file.path("src", "matvec_ldouble.cpp"))
@@ -98,7 +105,24 @@ mat_size <- 1024L
 A <- rand_positive_def_matrix(mat_size, cond_num = 1e3)
 x <- rnorm(mat_size)
 
-# Fill in
+l2_norm <- function(x) {
+  sqrt(sum(x^2))
+}
+
+calc_diffs <- function(x1, x2) {
+  x1_norm <- l2_norm(x1) 
+  l2_norm_diff <- l2_norm(x1 - x2)
+  l2_norm_rel_diff <- l2_norm_diff / x1_norm
+  coord_rel_diff <- abs(x1 - x2) / abs(x1)
+  return(list(l2_norm_rel_diff = l2_norm_rel_diff, coord_rel_diff = coord_rel_diff))
+}
+
+Ax_double <- matvec_double(A, x)
+Ax_ldouble <- matvec_ldouble(A, x)
+
+diffs <- calc_diffs(Ax_ldouble, Ax_double)
+print(paste0("l2-norm relative difference: ", diffs$l2_norm_rel_diff))
+print(paste0("Max coordinate-wise relative differences: ", max(diffs$coord_rel_diff)))
 
 ```
 
@@ -111,6 +135,9 @@ Then solve a positive-definite system $\bA \bx = \bb$ for $\bx$ using the three 
 Which algorithm appears to be more accurate than the others? 
 Visually demonstrate your answer.
 
+**My answer:**
+It appears that LU decomposition using solve() is more accurate than the others, but all three methods yield comparably small relative errors. Please refer to the saved png file in the folder.
+
 ```{r, eval=FALSE}
 set.seed(1918)
 cond_num <- 1e6
@@ -121,8 +148,29 @@ mat_size <- 1024L
 A <- rand_positive_def_matrix(mat_size, cond_num)
 x <- rnorm(mat_size)
 
-# Fill in
+b <- matvec_ldouble(A, x)
+x_lu <- solve(A, b)
+x_chol <- solve_via_cholesky(A, b)
+x_qr <- qr.solve(A, b)
 
+diffs_lu <- calc_diffs(x, x_lu)
+diffs_chol <- calc_diffs(x, x_chol)
+diffs_qr <- calc_diffs(x, x_qr)
+
+df <- data.frame(
+  Method = c(rep("LU", length(diffs_lu$coord_rel_diff)),
+             rep("Cholesky", length(diffs_chol$coord_rel_diff)),
+             rep("QR", length(diffs_qr$coord_rel_diff))),
+  CoordinateDifference = log10(c(diffs_lu$coord_rel_diff, diffs_chol$coord_rel_diff, diffs_qr$coord_rel_diff))
+)
+
+library(ggplot2)
+png("num_linalg_task2.png")
+p2 <- ggplot(df, aes(x = Method, y = CoordinateDifference)) +
+  geom_boxplot() +
+  ylab("log10(Coordinate-wise relative differences)") +
+  ggtitle("Comparison of accuracy between methods")
+ggsave("num_linalg_task2.png", plot = p2)
 ```
 
 ### Task &#x4E09;
@@ -139,6 +187,9 @@ We also vary the condition number of $\bA$ and assess whether the results would 
 * Vary the condition number in the range $10^6 \sim 10^{12}$, e.g. by trying $10^6$, $10^9$, and $10^{12}$.
 * Do you see any patterns in the numerical errors across the three algorithms, metrics, and/or condition numbers? Show some plots to support your conclusion.
 
+**My answer:**
+When the condition number increases, the coordinate-wise relative error increases across three algorithms and metrics. That's because the problem is more ill-conditioned for large k and the algorithms are more likely to suffer from numiercal instability. When the condition number is low or the problem is well-conditioned, LU decomposition using solve() yields smallest relative error, followed by Cholesky and QR decomposition. When the condition number is high, Cholesky decomposition has the highest numerical statbility for a system with positive definite matrices, and QR decomposition has the highest relative error. The patterns remain similar across the five metrics. Please refer to the saved png files in the folder.
+
 **Note:** 
 The QR solver will throw an error when the system is ill-condition enough that the numerical solution might not be very accurate. 
 To force it to return the solution in any case, set `tol = .Machine$double.eps`.
@@ -149,34 +200,72 @@ source(file.path("R", "num_linalg_sim_study_helper.R"))
 
 n_sim <- 32L
 mat_size <- 512L
-cond_num <- 1e6
-metrics <- c("norm", "median", "five_percentile", "ninety_five_percentile")
-  # TODO: add another metric and modify the helper script accordingly
+cond_nums <- c(1e6, 1e9, 1e12)
+metrics <- c("norm", "median", "five_percentile", "ninety_five_percentile", "mean")
+method_list <- c("lu", "chol", "qr")
+rel_cond <- list()
 
-rel_error_list <- lapply(
-  c("lu", "chol", "qr"), 
-  function(method) pre_allocate_error_list(n_sim, metrics)
-)
-
-for (sim_index in 1:n_sim) {
-  A <- rand_positive_def_matrix(mat_size, cond_num)
-  x <- rnorm(mat_size) 
-  b <- matvec_ldouble(A, x)
-  x_approx <- list( 
-    # Fill in
+for (cond_num in cond_nums) {
+  rel_error_list <- lapply(
+    c("lu", "chol", "qr"), 
+    function(method) pre_allocate_error_list(n_sim, metrics)
   )
-  for (method in c("lu", "chol", "qr")) {
-    rel_error <- lapply(
-      metrics, 
-      function (metric) calc_rel_error(x, x_approx[[method]], metric)
+  names(rel_error_list) <- method_list
+
+  for (sim_index in 1:n_sim) {
+    A <- rand_positive_def_matrix(mat_size, cond_num)
+    x <- rnorm(mat_size) 
+    b <- matvec_ldouble(A, x)
+    x_approx <- list( 
+        lu = solve(A, b),
+        chol = solve_via_cholesky(A, b),
+        qr = qr.solve(A, b, tol = .Machine$double.eps)
     )
-    names(rel_error) <- metrics
-    for (metric in names(rel_error)) {
-      rel_error_list[[method]][[metric]][sim_index] <- rel_error[[metric]]
+    for (method in c("lu", "chol", "qr")) {
+      rel_error <- lapply(
+        metrics, 
+        function (metric) calc_rel_error(x, x_approx[[method]], metric)
+      )
+      names(rel_error) <- metrics
+      for (metric in names(rel_error)) {
+        rel_error_list[[method]][[metric]][sim_index] <- rel_error[[metric]]
+      }
     }
   }
+  rel_cond[[as.character(cond_num)]] <- rel_error_list
 }
 
-# TODO: visually compare errors
+```
+
+
+```{r}
+#visually compare errors
+library(gridExtra)
+for (cond_num in as.character(cond_nums)) {
+  rel_error_list <- rel_cond[[cond_num]]
+  plots <- list()
+  for (metric in metrics) {
+    df <- data.frame(
+      Method = c(
+        rep("LU", n_sim),
+        rep("Cholesky", n_sim),
+        rep("QR", n_sim)
+      ),
+      Difference = log10(c(rel_error_list[["lu"]][[metric]], rel_error_list[["chol"]][[metric]], rel_error_list[["qr"]][[metric]]))
+    )
+
+    p <- ggplot(df, aes(x = Method, y = Difference)) +
+      geom_boxplot() +
+      ylab(paste0("log10(", metric, " of Coordinate-wise relative differences)")) +
+      ggtitle(paste0("Comparison of accuracy between methods, k = ", cond_num)) + 
+      theme(plot.title = element_text(size = 7), 
+            axis.title.x = element_text(size = 7),
+            axis.title.y = element_text(size = 5))
+    plots[[metric]] <- p
+  }
+  overall_plot <- do.call(grid.arrange, c(plots, ncol = 3))
+  ggsave(paste0("num_linalg_task3_", cond_num, ".png"), overall_plot)
+}
 
 ```
+
