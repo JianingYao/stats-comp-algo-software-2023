@@ -162,7 +162,7 @@ cpp_row_result <- row_col_dot_matmat(A, B)
 all.equal(r_result, cpp_row_result)
 ```
 
-The outputs from `row_col_dot_matmat` and base R matrix multipication match. 
+The outputs from `row_col_dot_matmat` and base R matrix multiplication match. 
 
 ## Part B: Going one step beyond your linear algebra class
 
