@@ -55,6 +55,10 @@ for (i in 1:10^6) {
 What behavior do you observe above? How do you explain it?
 
 
+**My answer:**
+The last inner prod result disagrees with the previous ones and the product result changes every time I rerun the code. That's because the index variable i should start at 0 instead of 1 and go up to v.size() - 1 instead of v.size() in the loop. In C++ and Rcpp, array indices are 0-based. It leads to erroneous result when accessing invalid number at v[i] where i = v.size(). 
+
+
 ## Part B: Sloppy matrix-matrix multiplication
 
 You have been told by the instructor that error-checking is particularly important in C++ and, in particular, that you should probably check for the dimension compatibility before you multiply two matrices in Rcpp(Eigen).
@@ -80,6 +84,11 @@ dgemm_eigen(A, B)
 **Questions:**
 What do you get as an output? What if you re-run the code chunk? Explain the observed behavior.
 
+
+**My answer:**
+The output is a 4 by 2 matrix, with the first column being 1024 repeated four times and second column being repeatedly random numbers every time I rerun the code. The dimension of matrix A is (4 $\times$ 1024) and the dimension of matrix B is (512 $\times$ 2). When the dimensions of matrices are not compatible for multiplication, the output will have the default shape with the same number of rows as the left matrix and the same number of columns as the right matrix. Here, matrix A and B are stored in a contiguous block of memory in column-major order. So when making dot product of each row of A (length = 1024) with the first column of B (length = 512), the computer actually accesses a 1024-length vector consisted of 1's for matrix B (because B is stored and allocated in a 1024-length vector), resulting in repeated 1024 for the first column in the output. However, when it performs dot product of rows of A with the second column of B, the computer accesses a 1024-length vector with first half stored as the second column of B and second half undefined due to un-allocated space, resulting in a random and wrong second column for the output. 
+
+
 ## Part C: Consequence of "tresspassing"
 
 The code below uses the `axpy_c()` function as seen in lecture.
@@ -103,7 +112,10 @@ a <- 3.14
 x <- rep(1, 1e3L)
 y <- rep(0.00159, 1e7L)
 
-axpy_c(a, x, y)
+invisible(axpy_c(a, x, y))
+head(y)
+tail(y)
+
 ```
 
 **Questions/To-do's:**
@@ -112,6 +124,10 @@ axpy_c(a, x, y)
 Running the same piece of code from an R console (instead of an RStudio session) should give you more information on what actually happens.
 * Why does the second code chunk run fine?
 * Modify `axpy_c.cpp` to make the function safer to use.
+
+
+**My answer:**
+The R aborted when I ran the first code chunk. This is because the y vector has a length of 1e3, but the x vector has a length of 1e7, causing the loop in axpy_c() to access memory outside the bounds of y when operating on index beyond 1e3 of x. The second code chunk worked because the x vector has length 1e3 and the y vector has length 1e7. The operation happens within the boundary of vector x and y in the loop, with y being first 1e3 elements changed and the rest untouched. 
 
 
 # Exercise 3: Multiplying two matrices ain't quite what you learned in your linear algebra class
@@ -141,7 +157,12 @@ B <- matrix(rnorm(n_inner * n_col_out), nrow = n_inner, ncol = n_col_out)
 
 ```{r}
 # Check the output of `row_col_dot_matmat`
+r_result <- A %*% B
+cpp_row_result <- row_col_dot_matmat(A, B)
+all.equal(r_result, cpp_row_result)
 ```
+
+The outputs from `row_col_dot_matmat` and base R matrix multipication match. 
 
 ## Part B: Going one step beyond your linear algebra class
 
@@ -153,18 +174,37 @@ Which one is faster and why?
 
 ```{r}
 # Check and benchmark
+cpp_col_result <- col_oriented_matmat(A, B)
+all.equal(r_result, cpp_col_result)
+
+library(microbenchmark)
+bench::mark(
+  row_col_dot_matmat(A, B)
+)
+
+bench::mark(
+  col_oriented_matmat(A, B)
+)
 ```
 
 Also compare with performance of the matrix-matrix multiplication via `%*%` in R, which uses whatever the BLAS library your R was configured with.
 (You can find out which BLAS library R is using via `sessionInfo()` or `extSoftVersion()`.) 
 
 ```{r}
-# Fill in
+bench::mark(
+  A %*% B
+)
 ```
 
 When benchmarking alternative implementations (or alternative algorithms, more generally), keep in mind that the relative performance depends significantly on the size of a test problem.
 It is important, therefore, to benchmark your implementation/algorithm on problems of realistic size. 
 See the benchmark results of linear algebra libraries from [the Eigen development team](https://eigen.tuxfamily.org/index.php?title=Benchmark) and the results under "Gcbd benchmark" in [this github repository](https://github.com/andre-wojtowicz/blas-benchmarks), for example.
+
+
+**My answer:**
+The `col_oriented_matmat` (239ms) is much faster than `row_col_dot_matmat` (3.67s) because row operations tend to perform slower than column operations for matrix multiplication as matrices are stored in the order of column vectors. When performing a row operation, the processor needs to access memory in a non-contiguous pattern, which can be slower due to the need to fetch data from different memory locations.
+
+The base R matrix multiplication `%*%` (459ms) is slightly slower than `col_oriented_matmat` method implemented in Rcpp. In addition to efficient column-oriented matrix-vector multiplication in the latter algorithm, this may be also due to the fact that C++ code can be optimized by the compiler and executed more efficiently. 
 
 
 ## Part C: Doing it the right way
@@ -211,9 +251,25 @@ Report what you find.
 ```{r, warning=FALSE, eval=FALSE}
 # Import `dgemm_eigen()` from lecture
 Rcpp::sourceCpp(file.path("..", "lecture", "src", "gemm_eigen.cpp"))
+Rcpp::sourceCpp(file.path("src", "matmat.cpp"))
 ```
 
 ```{r, eval=FALSE}
 # Benchmark
-dgemm_eigen(A, B)
+bench::mark(
+  dgemm_eigen(A, B)
+)
+bench::mark(
+  row_col_dot_matmat(A, B)
+)
+bench::mark(
+  col_oriented_matmat(A, B)
+)
 ```
+
+**My answer:**
+78.7ms, 3.63s, 248ms default
+
+
+
+
