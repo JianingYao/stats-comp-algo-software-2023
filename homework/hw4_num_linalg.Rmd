@@ -46,7 +46,7 @@ Do relative speeds agree with what you expect from the complexity analyses?
 If not (quite), why might that be?
 
 **My answer: **
-Theoretically, the overall costs of solving a single linear system involving symmetric positive definite matrix via LU decomposition, Cholesky decomposition, and QR decomposition are $O(\frac{2}{3}p^3)$, $O(\frac{1}{3}p^3)$, and $O(\frac{4}{3}p^3)$. However, the relative speeds do not agree with the theoretical costs, where LU decomposition using solve() takes 134ms (median), Cholesky using chol() and backsolve() takes 173ms (median), and QR using qr.solve() takes 496ms (median). solve() is the fastest because it uses an optimized algorithm to solve linear systems with LAPACK library, which is faster than using the built-in chol() and backsolve() and allocating space to store the upper triangular matrix in our user-defined function. 
+Theoretically, the overall costs of solving a single linear system involving symmetric positive definite matrix via LU decomposition, Cholesky decomposition, and QR decomposition are $O(\frac{2}{3}p^3)$, $O(\frac{1}{3}p^3)$, and $O(\frac{4}{3}p^3)$. However, the relative speeds do not agree with the theoretical costs, where LU decomposition using solve() takes 134ms (median), Cholesky using chol() and backsolve() takes 173ms (median), and QR using qr.solve() takes 496ms (median). solve() is the fastest because it uses an optimized algorithm to solve linear systems with LAPACK library, which is faster than using the built-in chol() and backsolve() that take time to allocate space to store and access the upper triangular matrix in our user-defined function. 
 
 **Note:**
 I misspoke about the R's built-in `chol()` function during the lecture:
