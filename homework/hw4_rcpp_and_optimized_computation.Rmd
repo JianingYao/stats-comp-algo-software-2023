@@ -250,8 +250,8 @@ Report what you find.
 
 ```{r, warning=FALSE, eval=FALSE}
 # Import `dgemm_eigen()` from lecture
-Rcpp::sourceCpp(file.path("..", "lecture", "src", "gemm_eigen.cpp"))
-Rcpp::sourceCpp(file.path("src", "matmat.cpp"))
+Rcpp::sourceCpp(file.path("..", "lecture", "src", "gemm_eigen.cpp"), rebuild = TRUE)
+Rcpp::sourceCpp(file.path("src", "matmat.cpp"), rebuild = TRUE)
 ```
 
 ```{r, eval=FALSE}
